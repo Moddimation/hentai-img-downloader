@@ -17,6 +17,21 @@ if [ ! -f "$1" ]; then
 fi
 
 folderName=$2
+#!/bin/bash
+
+# Check if a file path is provided as a parameter
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <file> <output path>"
+    exit 1
+fi
+
+# Check if the provided file exists
+if [ ! -f "$1" ]; then
+    echo "File not found: $1"
+    exit 1
+fi
+
+folderName=$2
 
 # Define an array of user agents
 user_agents=(
@@ -57,7 +72,7 @@ download_images() {
             echo " -"
             echo "Fetching link: $link"
             echo "Downloading image: $filename..."
-            if wget --user-agent="$agent" -O "$folderName/$filename.tmp" "$link" >/dev/null 2>&1; then
+            if wget --timeout=1 --user-agent="$agent" -O "$folderName/$filename.tmp" "$link" >/dev/null 2>&1; then
                 # Get the size of the downloaded file
                 local downloaded_size=$(wc -c <"$folderName/$filename.tmp")
                 # Get the size of the existing file if it exists
@@ -77,12 +92,27 @@ download_images() {
                     success=true
                     break
                 fi
-            
             fi
             echo "Changing user agent"
         done
         if ! $success; then
-            echo "Failed to download image from: $link"
+            read -p "\nTIMEOUT: Failed to download image from $link. \nTry accessing the link directly/ Enable VPN(Japan). \nOtherwise, do you want to (0)retry, (1)skip to the next image, or (2)quit?: " choice
+            case "$choice" in
+                0)
+                    echo "Retrying..."
+                    download_images "$line"
+                    ;;
+                1)
+                    echo "Skipping to the next image..."
+                    ;;
+                2)
+                    echo "Quitting..."
+                    exit 1
+                    ;;
+                *)
+                    echo "Invalid choice. Please enter 'r', 's', or 'q'."
+                    ;;
+            esac
         fi
     fi
 }

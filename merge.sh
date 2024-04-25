@@ -1,35 +1,56 @@
 #!/bin/bash
 
-# Create the "dist" directory if it doesn't exist
+echo "Creating the \"dist\" directory if it doesn't exist"
 mkdir -p "dist"
 
-# Traverse all directories and rename/move files
-find . -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.bmp" -o -iname "*.mp4" \) -exec sh -c '
-    oldName=$(basename "$0")
-    extension="${oldName##*.}"
-    digits=0123456789
+# Loop through every folder starting with "images."
+for dir in images.*; do
+    echo "Processing files in directory: $dir"
+    echo
 
-    isNumeric=true
+    echo "Traverse all directories and rename/move files"
+    pushd "$dir" >/dev/null || exit 1
 
-    # Note: Checking if the filename contains any digits to determine whether to generate a random name
-    for char in ${digits}; do
-        if [[ ! "$oldName" == *$char* ]]; then
-            isNumeric=false
-            break
-        fi
+    for file in $(find . -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.bmp" -o -iname "*.mp4" \)); do
+        echo "Processing file: $file"
+        oldName=$(basename "$file")
+        extension="${oldName##*.}"
+        randomWord=$(head /dev/urandom | tr -dc '0123456789' | fold -w 8 | head -n 1)
+        newName="$randomWord.$extension"
+
+        echo "Renaming and moving file: $oldName to $newName"
+        mv "$file" "../dist/$newName"
     done
 
-    if [ "$isNumeric" = true ]; then
-        randomWord=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
-    else
-        randomWord=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+    popd >/dev/null || exit 1
+
+    echo
+    echo "Checking directory contents..."
+
+    # Check if the directory only contains .tmp and .html files
+    fileCount=$(find "$dir" -type f | wc -l)
+    notEmpty=false
+
+    if [[ $fileCount -gt 0 ]]; then
+        for file in "$dir"/*.*; do
+            if [[ "${file##*.}" != "tmp" && "${file##*.}" != "html" ]]; then
+                notEmpty=true
+                break
+            fi
+        done
     fi
 
-    newName="$randomWord.$extension"
+    # Delete the directory if it only contains .tmp and .html files
+    if ! $notEmpty; then
+        if [[ $fileCount -eq 0 ]]; then
+            echo "Deleting empty directory: $dir"
+            rm -r "$dir"
+        else
+            echo "Notice: Directory $dir contains files other than .tmp and .html files."
+        fi
+    fi
 
-    echo "Renaming and moving file: $oldName to $newName"
-    mv "$0" "dist/$newName"
-' {} \;
+    echo
+done
 
-# Delete empty subdirectories
-find . -type d -empty -delete
+exit 0
