@@ -2,10 +2,10 @@
 setlocal enabledelayedexpansion
 
 echo Creating the "dist" directory if it doesn't exist
-if not exist "%%~dpI\dist" mkdir "%%~dpI\dist"
+if not exist "dist" mkdir "dist"
 
 REM Loop through every folder starting with "images."
-for /D %%I in ("images.*") do (
+for /D %%I in ("images*") do (
     echo Processing files in directory: %%I
     echo.
     echo Traverse all directories and rename/move files
@@ -19,8 +19,8 @@ for /D %%I in ("images.*") do (
         set "randomWord="
         set "symbols=0123456789"
         for /L %%C in (1,1,8) do (
-            set /a "index=!random! %% 62"
-            for /F %%S in ("!index!") do set "randomChar=!symbols:~%%S,1!"
+            set /a "index=!random! %% 10"
+            for /F %%S in ("!index!") do set "randomChar=!digits:~%%S,1!"
             set "randomWord=!randomWord!!randomChar!"
         )
         set "newName=!randomWord!!extension!"
